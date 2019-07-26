@@ -1,0 +1,125 @@
+Question1：
+
+# 用系统功能调用实现简单输入输出
+# '0'=48 '9'=57 'A'=65 'Z'=90 'a'=97 'z'=122 '*'=42 '?'=63 '\n'=10
+
+            .data
+
+arrC:       .asciiz "Alpha", "Bravo", "China", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet", "Kilo", "Lima", "Mary", "November" ,"Oscar", "Paper", "Quebec", "Research", "Sierra", "Tango", "Uniform", "Victor", "Whisky", "X-ray", "Yankee", "Zulu"
+indC:       .word 0, 6, 12, 18, 24, 29, 37, 42, 48, 54, 61, 66, 71, 76, 85, 91, 97, 104, 113, 120, 126, 134, 141, 148, 154, 161
+arrN:       .asciiz "zero", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth"
+indN:       .word 0, 5, 11, 18, 24, 31, 37, 43, 51, 58
+
+            # 输出换行
+            .macro newline
+            li $v0, 11
+            li $a0, 10 # '\n'
+            syscall
+            .end_macro
+
+            .text
+            .globl main
+
+main:
+            # 输入一个字符
+            li $v0, 12
+            syscall
+            move $t0, $v0
+            newline
+            # 问号表示结束
+            li $t1, 63 # '?'
+            beq $t0, $t1, exit
+
+# 大写字母
+uc:
+            # 'A'-1 < $t0 < 'Z'+1
+            li $t1, 64
+            sltu $t2, $t1, $t0
+            li $t1, 91
+            sltu $t3, $t0, $t1
+            and $t1, $t2, $t3
+            beqz $t1, lc
+            # 取出偏移量
+            subu $t1, $t0, 65
+            la $t2, indC
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            lw $t2, ($t2)
+            # 输出字符串
+            li $v0, 4
+            la $a0, arrC
+            addu $a0, $a0, $t2
+            syscall
+            b loop
+
+# 小写字母
+lc:
+            # 'a'-1 < $t0 < 'z'+1
+            li $t1, 96
+            sltu $t2, $t1, $t0
+            li $t1, 123
+            sltu $t3, $t0, $t1
+            and $t1, $t2, $t3
+            beqz $t1, num
+            # 取出偏移量
+            subu $t1, $t0, 97
+            la $t2, indC
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            lw $t2, ($t2)
+            # 输出首字母
+            li $v0, 11
+            move $a0, $t0
+            syscall
+            # 输出其余字符串
+            li $v0, 4
+            la $a0, arrC
+            addu $a0, $a0, $t2
+            addiu $a0, $a0, 1
+            syscall
+            b loop
+
+# 数字
+num:
+            # '0'-1 < 输入 < '9'+1
+            li $t1, 47
+            sltu $t2, $t1, $t0 
+            li $t1, 58
+            sltu $t3, $t0, $t1
+            and $t1, $t2, $t3
+            beqz $t1, unknown
+            # 取出偏移量
+            subu $t1, $t0, 48
+            la $t2, indN
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            addu $t2, $t2, $t1
+            lw $t2, ($t2)
+            # 输出字符串
+            li $v0, 4
+            la $a0, arrN
+            addu $a0, $a0, $t2
+            syscall
+            b loop
+
+# 其它
+unknown:
+            # 输出星号
+            li $v0, 11
+            li $a0, 42 # '*'
+            syscall
+
+# 循环
+loop:
+            newline
+            b main
+
+exit:
+            # 退出
+
+# eof
